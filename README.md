@@ -33,7 +33,7 @@ If **Expires at** is empty, a task stays on time until the end of its deadline d
 
 ## Use the website
 
-Open the site: **https://YOUR-USERNAME.github.io/YOUR-REPOSITORY/**
+Open the site: **https://vebbisdagoat.github.io/Productivity-Manager/**
 
 To install it as an app:
 
