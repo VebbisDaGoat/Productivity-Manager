@@ -21,7 +21,7 @@ It comes in two versions that use the same task file format:
 
 ## Use the website
 
-Open the site: **https://YOUR-USERNAME.github.io/YOUR-REPOSITORY/**
+Open the site: **https://VebbisDaGoat.github.io/Productivity-Manager /**
 
 To install it as an app:
 
