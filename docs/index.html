@@ -1,0 +1,194 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Productivity Manager</title>
+  <meta name="description" content="Organize your tasks and stay productive.">
+  <meta name="theme-color" content="#4F46E5">
+
+  <link rel="manifest" href="manifest.webmanifest">
+  <link rel="icon" type="image/png" href="favicon.png">
+  <link rel="apple-touch-icon" href="apple-touch-icon.png">
+  <link rel="stylesheet" href="style.css">
+
+  <script>
+    // Apply the saved theme before the page is drawn, so it does not flash.
+    (function () {
+      try {
+        var theme = localStorage.getItem("pm-theme");
+        if (theme) document.documentElement.dataset.theme = theme;
+      } catch (e) {}
+    })();
+  </script>
+</head>
+
+<body>
+  <div class="app">
+
+    <header class="header">
+      <div>
+        <h1>My Productivity</h1>
+        <p id="subtitle" class="muted"></p>
+      </div>
+
+      <div class="header-actions">
+        <button id="installBtn" class="btn btn-primary" type="button" hidden>Install app</button>
+        <button id="importBtn" class="btn btn-secondary" type="button">Import</button>
+        <button id="exportBtn" class="btn btn-secondary" type="button">Export</button>
+        <button id="themeBtn" class="btn btn-secondary" type="button">Dark mode</button>
+        <input id="importFile" type="file" accept=".json,application/json" hidden>
+      </div>
+    </header>
+
+    <section class="stats" aria-label="Statistics">
+      <div class="card stat">
+        <div id="statTotal" class="stat-value c-accent">0</div>
+        <div class="stat-label">Total</div>
+      </div>
+      <div class="card stat">
+        <div id="statPending" class="stat-value c-soon">0</div>
+        <div class="stat-label">Pending</div>
+      </div>
+      <div class="card stat">
+        <div id="statCompleted" class="stat-value c-success">0</div>
+        <div class="stat-label">Completed</div>
+      </div>
+      <div class="card stat">
+        <div id="statOverdue" class="stat-value c-danger">0</div>
+        <div class="stat-label">Overdue</div>
+      </div>
+    </section>
+
+    <div id="progress" class="progress" role="progressbar" aria-label="Completed tasks"
+         aria-valuemin="0" aria-valuemax="100" aria-valuenow="0">
+      <div id="progressBar" class="progress-bar"></div>
+    </div>
+
+    <div class="layout">
+
+      <!-- New task -->
+      <aside class="card sidebar">
+        <h2>New task</h2>
+
+        <form id="taskForm" novalidate>
+          <div id="newFields"></div>
+          <button class="btn btn-primary btn-block" type="submit">Add task</button>
+        </form>
+
+        <button id="clearBtn" class="btn btn-secondary btn-block" type="button">Clear completed</button>
+      </aside>
+
+      <!-- Task list -->
+      <main class="panel">
+        <div class="controls">
+          <input id="search" class="search" type="search"
+                 placeholder="Search title or description..." aria-label="Search tasks" autocomplete="off">
+
+          <select id="statusFilter" aria-label="Filter by status">
+            <option>All</option>
+            <option>Pending</option>
+            <option>Completed</option>
+          </select>
+
+          <select id="categoryFilter" aria-label="Filter by category">
+            <option>All</option>
+            <option>School</option>
+            <option>Personal</option>
+            <option>Work</option>
+            <option>Other</option>
+          </select>
+
+          <select id="sortMenu" aria-label="Sort tasks">
+            <option>Deadline</option>
+            <option>Priority</option>
+            <option>Title (A-Z)</option>
+          </select>
+        </div>
+
+        <p id="countLabel" class="muted small"></p>
+
+        <ul id="taskList" class="task-list"></ul>
+      </main>
+    </div>
+  </div>
+
+  <!-- Form fields, shared by "New task" and "Edit task" -->
+  <template id="fieldsTemplate">
+    <label class="field">
+      <span class="field-label">Title</span>
+      <input name="title" type="text" maxlength="200" placeholder="Task title..." autocomplete="off">
+    </label>
+
+    <label class="field">
+      <span class="field-label">Description</span>
+      <textarea name="description" rows="3" placeholder="Description..."></textarea>
+    </label>
+
+    <label class="field">
+      <span class="field-label">Deadline</span>
+      <input name="due" type="text" inputmode="numeric" maxlength="10"
+             placeholder="DD-MM-YYYY" autocomplete="off">
+    </label>
+
+    <div class="quick">
+      <button type="button" class="btn btn-secondary btn-small" data-days="0">Today</button>
+      <button type="button" class="btn btn-secondary btn-small" data-days="1">Tomorrow</button>
+      <button type="button" class="btn btn-secondary btn-small" data-days="7">+1 week</button>
+    </div>
+
+    <fieldset class="field">
+      <legend class="field-label">Priority</legend>
+      <div class="segmented">
+        <label class="seg"><input type="radio" name="priority" value="Low"><span>Low</span></label>
+        <label class="seg"><input type="radio" name="priority" value="Medium" checked><span>Medium</span></label>
+        <label class="seg"><input type="radio" name="priority" value="High"><span>High</span></label>
+      </div>
+    </fieldset>
+
+    <label class="field">
+      <span class="field-label">Category</span>
+      <select name="category">
+        <option>School</option>
+        <option>Personal</option>
+        <option>Work</option>
+        <option>Other</option>
+      </select>
+    </label>
+
+    <p class="form-error" role="alert"></p>
+  </template>
+
+  <!-- Edit window -->
+  <dialog id="editDialog" class="dialog" aria-labelledby="editTitle">
+    <form id="editForm" novalidate>
+      <h2 id="editTitle">Edit task</h2>
+      <div id="editFields"></div>
+      <div class="dialog-actions">
+        <button id="editCancel" class="btn btn-secondary" type="button">Cancel</button>
+        <button class="btn btn-primary" type="submit">Save changes</button>
+      </div>
+    </form>
+  </dialog>
+
+  <!-- Confirm window -->
+  <dialog id="confirmDialog" class="dialog dialog-small" aria-labelledby="confirmTitle">
+    <form method="dialog">
+      <h2 id="confirmTitle"></h2>
+      <p id="confirmText" class="muted"></p>
+      <div class="dialog-actions">
+        <button class="btn btn-secondary" value="cancel">Cancel</button>
+        <button id="confirmOk" class="btn btn-danger" value="ok">Delete</button>
+      </div>
+    </form>
+  </dialog>
+
+  <div id="toast" class="toast" role="status" aria-live="polite"></div>
+
+  <noscript>
+    <p class="noscript">This app needs JavaScript to run.</p>
+  </noscript>
+
+  <script src="app.js"></script>
+</body>
+</html>
